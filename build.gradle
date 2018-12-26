@@ -1,0 +1,28 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+version '1.1.2'
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+mainClassName = 'Example'
+
+repositories {
+    jcenter()
+}
+
+configurations {
+    compile.extendsFrom morphologicalStructures
+    compile.extendsFrom gama
+    compile.extendsFrom templateWrapperClasses
+    compile.extendsFrom rulesForCompattibility
+}
+
+dependencies {
+    compile  project(':MorphologicalStructures')
+    compile  project(':Gama')
+    compile  project(':TemplateWrapperClasses')
+    compile  project(':RulesForCompatibility')
+}
+
+
+

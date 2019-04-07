@@ -1,6 +1,9 @@
 *.iws
 .idea
+*/.idea/*
 .gradle
 gradle/*
 gradlew*
+*.log
+*.iml
 

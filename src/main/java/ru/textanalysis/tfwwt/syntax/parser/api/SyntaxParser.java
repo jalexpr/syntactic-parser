@@ -1,38 +1,46 @@
 package ru.textanalysis.tfwwt.syntax.parser.api;
 
+import ru.textanalysis.tfwwt.awf.AWFilter;
 import ru.textanalysis.tfwwt.gama.main.Gama;
-import ru.textanalysis.tfwwt.jmorfsdk.form.Form;
-import ru.textanalysis.tfwwt.morphological.structures.storage.BearingPhraseList;
-import ru.textanalysis.tfwwt.morphological.structures.storage.WordList;
-
-import java.util.List;
+import ru.textanalysis.tfwwt.morphological.structures.internal.sp.SentenceSP;
+import ru.textanalysis.tfwwt.morphological.structures.storage.ref.RefBearingPhraseList;
 
 public class SyntaxParser {
-    private SyntaxParser() {}
+    private AWFilter aWFilter = new AWFilter();
 
-    public static List<Form> getTreeSentence(String text) {
+    //закрыть
+    public SyntaxParser() {}
+
+    public SentenceSP getTreeSentence(String text) {
         Gama gama = new Gama();
-        BearingPhraseList bearingPhraseList = gama.getMorfSentence(text);
-
+        gama.init();
+        RefBearingPhraseList morphSentence = gama.getMorphSentence(text);
+        SentenceSP sentence = new SentenceSP(morphSentence);
+        sentence.applyFunction(aWFilter::useAWFilterForBearingPhraseList);
+        return sentence;
     }
 
-    private static void settingLinksBearingPhrases(BearingPhraseList bearingPhrases) {
-        settingLinksWithinBearingPhrases(bearingPhrases);
-        settingLinksMainWordsBearingPhrases(bearingPhrases);
-    }
-
-    private static void settingLinksWithinBearingPhrases(BearingPhraseList bearingPhrases) {
-        bearingPhrases.forEach(words -> {
-            settingLinksWithinOneBearingPhrase(words);
-        });
-    }
-
-    private static void settingLinksWithinOneBearingPhrase(WordList words) {
-        //todo:связывание
-    }
-
-    private static void settingLinksMainWordsBearingPhrases(BearingPhraseList bearingPhrases) {
-
-    }
+//    private void getTreeBearingPhrase(BearingPhraseSP bearingPhraseSP) {
+//
+//    }
+//
+//    private static void settingLinksBearingPhrases(BearingPhraseList bearingPhrases) {
+//        settingLinksWithinBearingPhrases(bearingPhrases);
+//        settingLinksMainWordsBearingPhrases(bearingPhrases);
+//    }
+//
+//    private static void settingLinksWithinBearingPhrases(BearingPhraseList bearingPhrases) {
+//        bearingPhrases.forEach(words -> {
+//            settingLinksWithinOneBearingPhrase(words);
+//        });
+//    }
+//
+//    private static void settingLinksWithinOneBearingPhrase(WordList words) {
+//        todo:связывание
+//    }
+//
+//    private static void settingLinksMainWordsBearingPhrases(BearingPhraseList bearingPhrases) {
+//
+//    }
 
 }

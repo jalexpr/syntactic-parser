@@ -17,3 +17,6 @@ project(':Parser').projectDir = new File('C:/TFWWT/Parser')
 
 include 'RulesForCompatibility'
 project(':RulesForCompatibility').projectDir = new File('C:/TFWWT/RulesForCompatibility')
+
+include 'AWFilter'
+project(':AWFilter').projectDir = new File('C:/TFWWT/AWFilter')

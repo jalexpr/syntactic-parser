@@ -1,20 +1,20 @@
-package ru.textanalysis.tfwwt.syntax.parser.api;
+package ru.textanalysis.tawt.sp.api;
 
-import ru.textanalysis.tfwwt.awf.AWFilter;
-import ru.textanalysis.tfwwt.gama.main.Gama;
-import ru.textanalysis.tfwwt.morphological.structures.internal.sp.BearingPhraseSP;
-import ru.textanalysis.tfwwt.morphological.structures.internal.sp.CursorToFormInWord;
-import ru.textanalysis.tfwwt.morphological.structures.internal.sp.SentenceSP;
-import ru.textanalysis.tfwwt.morphological.structures.internal.sp.WordSP;
-import ru.textanalysis.tfwwt.morphological.structures.storage.ref.RefBearingPhraseList;
-import ru.textanalysis.tfwwt.rules.compatibility.RelationshipHandler;
+import ru.textanalysis.tawt.awf.AWF;
+import ru.textanalysis.tawt.gama.main.Gama;
+import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
+import ru.textanalysis.tawt.ms.internal.sp.CursorToFormInWord;
+import ru.textanalysis.tawt.ms.internal.sp.SentenceSP;
+import ru.textanalysis.tawt.ms.internal.sp.WordSP;
+import ru.textanalysis.tawt.ms.storage.ref.RefBearingPhraseList;
+import ru.textanalysis.tawt.rfc.RelationshipHandler;
 
 import java.util.List;
 
-import static ru.textanalysis.tfwwt.morphological.structures.internal.sp.CursorToFormInWord.NOT_HAVE_EXACT_RELATION;
+import static ru.textanalysis.tawt.ms.internal.sp.CursorToFormInWord.NOT_HAVE_EXACT_RELATION;
 
 public class SyntaxParser {
-    private AWFilter aWFilter = new AWFilter();
+    private AWF aWFilter = new AWF();
     private RelationshipHandler relationshipHandler = new RelationshipHandler();
 
     //закрыть

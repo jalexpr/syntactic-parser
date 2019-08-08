@@ -1,9 +1,8 @@
-package ru.textanalysis.tfwwt.syntax.parser.rules.compatibility;
+package ru.textanalysis.tawt.sp.rules.compatibility;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.textanalysis.tfwwt.rules.compatibility.Rule;
-//import ru.textanalysis.tfwwt.rules.compatibility.RFC;
+import ru.textanalysis.tawt.rfc.Rule;
 
 public class FactoryRules {
     private static Logger log = LoggerFactory.getLogger(FactoryRules.class);

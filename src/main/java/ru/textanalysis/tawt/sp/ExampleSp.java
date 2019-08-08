@@ -1,7 +1,9 @@
-import ru.textanalysis.tfwwt.morphological.structures.internal.sp.SentenceSP;
-import ru.textanalysis.tfwwt.syntax.parser.api.SyntaxParser;
+package ru.textanalysis.tawt.sp;
 
-public class Runner {
+import ru.textanalysis.tawt.ms.internal.sp.SentenceSP;
+import ru.textanalysis.tawt.sp.api.SyntaxParser;
+
+public class ExampleSp {
     public static void main(String[] args) {
         SyntaxParser syntaxParser = new SyntaxParser();
 

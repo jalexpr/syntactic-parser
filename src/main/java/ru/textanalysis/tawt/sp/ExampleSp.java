@@ -1,14 +1,14 @@
 package ru.textanalysis.tawt.sp;
 
-import ru.textanalysis.tawt.ms.internal.sp.SentenceSP;
+import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
 import ru.textanalysis.tawt.sp.api.SyntaxParser;
 
 public class ExampleSp {
     public static void main(String[] args) {
-        SyntaxParser syntaxParser = new SyntaxParser();
+        SyntaxParser sp = new SyntaxParser();
+        sp.init();
 
-        SentenceSP sentence = syntaxParser.getTreeSentence("Мама мыла раму");
-
-        System.out.println(sentence);
+        BearingPhraseSP phrase = sp.getTreeSentence("Солнце село за село.");
+        System.out.println(phrase);
     }
 }

@@ -3,124 +3,43 @@ package ru.textanalysis.tawt.sp.api;
 import ru.textanalysis.tawt.awf.AWF;
 import ru.textanalysis.tawt.gama.main.Gama;
 import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
-import ru.textanalysis.tawt.ms.internal.sp.CursorToFormInWord;
-import ru.textanalysis.tawt.ms.internal.sp.SentenceSP;
-import ru.textanalysis.tawt.ms.internal.sp.WordSP;
+import ru.textanalysis.tawt.ms.storage.BearingPhraseList;
+import ru.textanalysis.tawt.ms.storage.WordList;
 import ru.textanalysis.tawt.ms.storage.ref.RefBearingPhraseList;
-import ru.textanalysis.tawt.rfc.RelationshipHandler;
-
-import java.util.List;
-
-import static ru.textanalysis.tawt.ms.internal.sp.CursorToFormInWord.NOT_HAVE_EXACT_RELATION;
 
 public class SyntaxParser {
-    private AWF aWFilter = new AWF();
-    private RelationshipHandler relationshipHandler = new RelationshipHandler();
+    //todo
+    private Gama gama = new Gama();
+    private AWF awf = new AWF();
 
-    //закрыть
-    public SyntaxParser() {
-    }
-
-    public SentenceSP getTreeSentence(String text) {
-        Gama gama = new Gama();
+    public void init() {
         gama.init();
-        RefBearingPhraseList morphSentence = gama.getMorphSentence(text);
-        SentenceSP sentence = new SentenceSP(morphSentence);
-        sentence.applyConsumer(aWFilter::useAWFilterForBearingPhraseList);
-        sentence.applyConsumer(bearingPhrase -> bearingPhrase.applyConsumer(words -> words.forEach(WordSP::cleanNotRelation)));
-        sentence.applyConsumer(bearingPhrase -> {
-            bearingPhrase.applyConsumer(words -> {
-                int leftB = 0;
-                int rightB = 0;
-                for (int i = 0; i < words.size(); i++) {
-                    if (words.get(i).isContainsBearingForm()) {
-                        if (leftB != rightB) {
-                            leftB = rightB;
-                        }
-                        rightB = i;
-                        searchRelation(leftB, rightB, words);
-                    }
-                }
-            });
-        });
-        sentence.applyConsumer(bearingPhrase -> bearingPhrase.applyConsumer(words -> words.forEach(WordSP::cleanNotRelation)));
-        sentence.applyConsumer(bearingPhrase -> {
-            bearingPhrase.applyConsumer(words -> {
-                int leftB = 0;
-                int rightB = 0;
-                for (int i = 0; i < words.size(); i++) {
-                    if (words.get(i).isContainsBearingForm()) {
-                        if (leftB != rightB) {
-                            leftB = rightB;
-                        }
-                        rightB = i;
-                        searchRelationBearingForm(leftB, rightB, words);
-                    }
-                }
-            });
-        });
-        sentence.applyConsumer(BearingPhraseSP::searchMainOmoForm);
-        return sentence;
+        awf.init();
     }
 
-    private void searchRelationBearingForm(int leftB, int rightB, List<WordSP> words) {
-        if (rightB - leftB > 1) {
-            if (!relationshipHandler.establishRelation(rightB - leftB, words.get(leftB), words.get(rightB))) {
-                final WordSP wordB = words.get(rightB);
-                words.get(leftB).applyConsumer(omoForm -> {
-                    if (!omoForm.haveMain()) {
-                        omoForm.setMainCursors(new CursorToFormInWord(wordB, NOT_HAVE_EXACT_RELATION));
-                        wordB.applyConsumer(omoFormB -> omoFormB.addDependentCursors(new CursorToFormInWord(words.get(leftB), omoForm.hashCode())));
-                    }
-                });
-            }
-        }
+    public BearingPhraseSP getTreeSentence(String text) {
+        RefBearingPhraseList bearingPhraseList = gama.getMorphSentence(text);
+        AWF awFilter = new AWF(); // todo
+        BearingPhraseSP bearingPhrase = new BearingPhraseSP(bearingPhraseList.get(0));
+        awFilter.useAWFilterForBearingPhraseList(bearingPhrase);
+        bearingPhrase.searchMainOmoForm();
+        return bearingPhrase;
     }
 
-    //todo test
-    private void searchRelation(int leftB, int rightB, List<WordSP> words) {
-        if (rightB - leftB > 1) {
-            for (int i = rightB; i > leftB; i--) {
-                for (int j = i - 1; j >= leftB; j--) {
-                    relationshipHandler.establishRelation(i - j, words.get(j), words.get(i));
-                }
-            }
-
-            WordSP wordB = words.get(rightB);
-            for (int i = leftB + 1; i < rightB; i++) {
-                final WordSP word = words.get(i);
-                word.applyConsumer(omoForm -> {
-                    if (!omoForm.haveMain()) {
-                        omoForm.setMainCursors(new CursorToFormInWord(wordB, NOT_HAVE_EXACT_RELATION));
-                        wordB.applyConsumer(omoFormB -> omoFormB.addDependentCursors(new CursorToFormInWord(word, omoForm.hashCode())));
-                    }
-                });
-            }
-        }
+    private void settingLinksBearingPhrases(BearingPhraseList bearingPhrases) {
+        settingLinksWithinBearingPhrases(bearingPhrases);
+        settingLinksMainWordsBearingPhrases(bearingPhrases);
     }
 
+    private void settingLinksWithinBearingPhrases(BearingPhraseList bearingPhrases) {
+        bearingPhrases.forEach(this::settingLinksWithinOneBearingPhrase);
+    }
 
-//    private void getTreeBearingPhrase(BearingPhraseSP bearingPhraseSP) {
-//
-//    }
-//
-//    private static void settingLinksBearingPhrases(BearingPhraseList bearingPhrases) {
-//        settingLinksWithinBearingPhrases(bearingPhrases);
-//        settingLinksMainWordsBearingPhrases(bearingPhrases);
-//    }
-//
-//    private static void settingLinksWithinBearingPhrases(BearingPhraseList bearingPhrases) {
-//        bearingPhrases.forEach(words -> {
-//            settingLinksWithinOneBearingPhrase(words);
-//        });
-//    }
-//
-//    private static void settingLinksWithinOneBearingPhrase(WordList words) {
-//        todo:связывание
-//    }
-//
-//    private static void settingLinksMainWordsBearingPhrases(BearingPhraseList bearingPhrases) {
-//
-//    }
+    private void settingLinksWithinOneBearingPhrase(WordList words) {
+        //todo:связывание
+    }
 
+    private void settingLinksMainWordsBearingPhrases(BearingPhraseList bearingPhrases) {
+
+    }
 }

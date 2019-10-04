@@ -19,9 +19,8 @@ public class SyntaxParser {
 
     public BearingPhraseSP getTreeSentence(String text) {
         RefBearingPhraseList bearingPhraseList = gama.getMorphSentence(text);
-        AWF awFilter = new AWF(); // todo
-        BearingPhraseSP bearingPhrase = new BearingPhraseSP(bearingPhraseList.get(0));
-        awFilter.useAWFilterForBearingPhraseList(bearingPhrase);
+        BearingPhraseSP bearingPhrase = new BearingPhraseSP(bearingPhraseList.get(0)); //todo пока что работа с первым опорным оборотом
+        awf.applyAwfForBearingPhrase(bearingPhrase);
         bearingPhrase.searchMainOmoForm();
         return bearingPhrase;
     }

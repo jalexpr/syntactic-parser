@@ -13,7 +13,8 @@ public class ExampleSp {
 //
         SyntaxParser sp = new SyntaxParser();
         sp.init();
-        List<BearingPhraseSP> phrase = sp.getTreeSentence("стало ясно, что будет с российской валютой");
+        List<BearingPhraseSP> phrase
+                = sp.getTreeSentence("Стало ясно, что будет с российской валютой.");
         phrase.forEach(System.out::println);
     }
 }

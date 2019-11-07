@@ -1,5 +1,6 @@
 package ru.textanalysis.tawt.sp.api;
 
+import org.slf4j.LoggerFactory;
 import ru.textanalysis.tawt.awf.AWF;
 import ru.textanalysis.tawt.gama.main.Gama;
 import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
@@ -12,16 +13,22 @@ import java.util.stream.Collectors;
 
 import static ru.textanalysis.tawt.rfc.Utils.installCompatibility;
 
-public class SyntaxParser {
+public class SyntaxParser implements ISyntaxParser {
+    private final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
+
     private Gama gama = new Gama();
     private AWF awf = new AWF();
     private RulesForCompatibility rules = new RulesForCompatibility();
 
+    @Override
     public void init() {
         gama.init();
         awf.init();
+        rules.init();
+        log.debug("SP is initialized!");
     }
 
+    @Override
     public List<BearingPhraseSP> getTreeSentence(String text) {
         List<BearingPhraseSP> bearingPhraseList = gama.getMorphSentence(text).stream().map(BearingPhraseSP::new).collect(Collectors.toList());
         bearingPhraseList.forEach(awf::applyAwfForBearingPhrase);

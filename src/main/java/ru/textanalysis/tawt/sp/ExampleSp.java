@@ -39,7 +39,11 @@ public class ExampleSp {
 //            System.out.println(end - start);
 //        }
 
-        String sent = "Солнце село за село";
+
+        String sent = "Солнце село за село. Необходимость автоматической обработки предложения и составления графа " +
+                "зависимости обусловлена тем, что для выделения понятий необходим анализ большого " +
+                "количества предложений, что при ручной обработке заняло бы значительное количество " +
+                "времени.";
         System.out.println(sent + ":");
         List<BearingPhraseExt> exts = sp.getTreeSentenceWithoutAmbiguity(sent);
         exts.forEach(bearingPhraseExt -> {

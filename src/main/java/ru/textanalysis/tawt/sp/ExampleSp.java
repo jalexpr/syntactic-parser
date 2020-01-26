@@ -14,7 +14,24 @@ public class ExampleSp {
         SyntaxParser sp = new SyntaxParser();
         sp.init();
         List<BearingPhraseSP> phrase
-                = sp.getTreeSentence("Стало ясно, что будет с российской валютой.");
+                = sp.getTreeSentence("Сегодня cтало ясно, что будет с российской валютой и евро");
         phrase.forEach(System.out::println);
+
+        long start;
+        long end;
+
+        for(int i = 0; i < 10; i++) {
+            for(int j = 0; j < 10000 * (i + 1); j++) {
+                sp.getTreeSentence("Сегодня cтало ясно, что будет с российской валютой и евро");
+            }
+        }
+        for(int i = 0; i < 10; i++) {
+            start = System.currentTimeMillis();
+            for(int j = 0; j < 10000 * (i + 1); j++) {
+                sp.getTreeSentence("Сегодня cтало ясно, что будет с российской валютой и евро");
+            }
+            end = System.currentTimeMillis();
+            System.out.println(end - start);
+        }
     }
 }

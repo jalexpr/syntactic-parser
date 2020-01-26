@@ -3,6 +3,7 @@ package ru.textanalysis.tawt.sp.api;
 import org.slf4j.LoggerFactory;
 import ru.textanalysis.tawt.awf.AWF;
 import ru.textanalysis.tawt.gama.main.Gama;
+import ru.textanalysis.tawt.ms.external.sp.BearingPhraseExt;
 import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
 import ru.textanalysis.tawt.ms.internal.sp.OmoFormSP;
 import ru.textanalysis.tawt.ms.internal.sp.WordSP;
@@ -81,5 +82,11 @@ public class SyntaxParser implements ISyntaxParser {
                 }
             }
         }
+    }
+
+    @Override
+    public List<BearingPhraseExt> getTreeSentenceWithoutAmbiguity(String text) {
+        List<BearingPhraseSP> bearingPhraseSP = getTreeSentence(text);
+       return bearingPhraseSP.stream().map(BearingPhraseSP::toExt).collect(Collectors.toList());
     }
 }

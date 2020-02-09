@@ -14,6 +14,10 @@ public class ExampleSp {
 //
         SyntaxParser sp = new SyntaxParser();
         sp.init();
+        List<BearingPhraseSP> phrase1
+                = sp.getTreeSentence("рецепт этого средства невероятно прост достаточно взять две ложки мёда и смешать с таким же количеством белой глины и будет пррпррпррпрр");
+        phrase1.forEach(System.out::println);
+
         List<BearingPhraseSP> phrase
                 = sp.getTreeSentence("Сегодня cтало ясно, что будет с российской валютой и евро");
         phrase.forEach(System.out::println);

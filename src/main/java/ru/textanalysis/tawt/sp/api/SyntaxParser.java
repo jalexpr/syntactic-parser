@@ -1,92 +1,146 @@
 package ru.textanalysis.tawt.sp.api;
 
-import org.slf4j.LoggerFactory;
-import ru.textanalysis.tawt.awf.AWF;
-import ru.textanalysis.tawt.gama.main.Gama;
-import ru.textanalysis.tawt.ms.external.sp.BearingPhraseExt;
-import ru.textanalysis.tawt.ms.internal.sp.BearingPhraseSP;
-import ru.textanalysis.tawt.ms.internal.sp.OmoFormSP;
-import ru.textanalysis.tawt.ms.internal.sp.WordSP;
+import lombok.extern.slf4j.Slf4j;
+import ru.textanalysis.tawt.awf.AmbiguityWordsFilter;
+import ru.textanalysis.tawt.awf.AmbiguityWordsFilterImpl;
+import ru.textanalysis.tawt.gama.GamaImpl;
+import ru.textanalysis.tawt.ms.convector.GamaToSpConvector;
+import ru.textanalysis.tawt.ms.grammeme.ShortBearingForm;
+import ru.textanalysis.tawt.ms.model.sp.BearingPhrase;
+import ru.textanalysis.tawt.ms.model.sp.Sentence;
+import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
+import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.textanalysis.tawt.rfc.Utils.installCompatibility;
-
+@Slf4j
 public class SyntaxParser implements ISyntaxParser {
-    private final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
 
-    private Gama gama = new Gama();
-    private AWF awf = new AWF();
-    private RulesForCompatibility rules = new RulesForCompatibility();
+	private final GamaImpl gama = new GamaImpl();
+	private final AmbiguityWordsFilter awf = new AmbiguityWordsFilterImpl();
+	private final RulesForCompatibility rules = new RulesForCompatibilityImpl();
+	private final GamaToSpConvector convector = new GamaToSpConvector();
 
-    @Override
-    public void init() {
-        gama.init();
-        awf.init();
-        rules.init();
-        log.debug("SP is initialized!");
-    }
+	@Override
+	public void init() {
+		gama.init();
+		awf.init();
+		rules.init();
+		log.debug("SP is initialized!");
+	}
 
-    @Override
-    public List<BearingPhraseSP> getTreeSentence(String text) {
-        List<BearingPhraseSP> bearingPhraseList = gama.getMorphSentence(text).stream().map(BearingPhraseSP::new).collect(Collectors.toList());
-        bearingPhraseList.forEach(awf::applyAwfForBearingPhrase);
-        bearingPhraseList.forEach(this::applyCompatibility);
-        bearingPhraseList.forEach(BearingPhraseSP::searchMainOmoForm);
-        return bearingPhraseList;
-    }
+	@Override
+	public Sentence getTreeSentence(String text) {
+		Sentence sentence = convector.convert(gama.getMorphSentence(text));
+		sentence.applyForEachBearingPhrases(awf::applyAwfForBearingPhrase);
+		sentence.applyForEachBearingPhrases(this::applyCompatibility);
+		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
+		sentence.applyForEachBearingPhrases(this::searchMainForm);
+		applyCompatibilityForSentence(sentence);
+		return sentence;
+	}
 
-    private void applyCompatibility(BearingPhraseSP bearingPhraseSP) {
-        bearingPhraseSP.applyConsumer(word -> {
-            establishCompatibility(word);
-            attachmentToBearingWord(word);
-            //todo
-        });
-    }
+	private void applyCompatibilityForSentence(Sentence sentence) { //todo привести в полное соответствие со схемой
+		List<Word> words = sentence.getBearingPhrases().stream()
+			.map(BearingPhrase::getMainWord)
+			.collect(Collectors.toList());
+		applyCompatibility(words);
+		List<Word> mains = words.stream()
+			.filter(word -> !word.haveMain())
+			.collect(Collectors.toList());
+		sentence.setMainWord(mains);
+	}
 
-    private void establishCompatibility(List<WordSP> words) {
-        for (int i = words.size() - 1; -1 < i; i--) {
-            WordSP word = words.get(i);
-            for (int j = words.size() - 1; i < j; j--) {
-                if (rules.establishRelation(j - i, word, words.get(j))) {
-                    //todo log;
-                }
-            }
-        }
-    }
+	private void applyCompatibility(BearingPhrase bearingPhrase) {
+		bearingPhrase.applyConsumer(this::applyCompatibility);
+	}
 
-    //todo добавить разеление на опорные и неопорные слова (делать двумя иттерациями)
-    private void attachmentToBearingWord(List<WordSP> words) {
-        for (int i = words.size() - 1; 0 < i; i--) {
-            WordSP wordD = words.get(i);
-            if (!wordD.haveMain()) {
-                for (int j = i - 1; -1 < j; j--) {
-                    WordSP wordM = words.get(j);
-                    if (wordM.haveContainsBearingForm()) {
-                        OmoFormSP omoFormM = wordM.getByFilter(OmoFormSP::haveBearingForm).get(0);
-                        //todo добавить возможность привязывать не первый
-                        OmoFormSP omoFormD;
-                        List<OmoFormSP> omoFormsD = wordD.getByFilter(OmoFormSP::haveRelation);
-                        if (omoFormsD.isEmpty()) {
-                            omoFormD = wordD.getByFilter(omoFormSP -> true).get(0);
-                        } else {
-                            omoFormD = omoFormsD.get(0);
-                        }
-                        installCompatibility(wordM, wordD, omoFormM, omoFormD);
-                        wordM.cleanNotRelation();
-                        wordD.cleanNotRelation();
-                        break;
-                    }
-                }
-            }
-        }
-    }
+	private void applyCompatibility(List<Word> words) {
+		int distance = 4; // todo вынести в настройки?
+		int firstIndex = 0;
+		int lastIndex = words.size() - 1;
+		for (int i = lastIndex; -1 < i; i--) {
+			int leftNeighbor = i - 1;
+			int rightNeighbor = i + 1;
+			Word word = words.get(i);
+			if (word.haveContainsBearingForm()) {
+				for (int j = Math.max(firstIndex, leftNeighbor); Math.max(firstIndex, leftNeighbor - distance) < j; j--) {
+					Word left = words.get(j);
+					if (!word.haveRelationship(left)) {
+						if (!left.haveContainsBearingForm()) {
+							rules.establishRelation(word, left);
+						} else {
+							break;
+						}
+					}
+				}
+				for (int j = Math.min(lastIndex, rightNeighbor); j < Math.min(lastIndex, rightNeighbor + distance); j++) {
+					Word right = words.get(j);
+					if (!word.haveRelationship(right)) {
+						if (!right.haveContainsBearingForm()) {
+							rules.establishRelation(word, right);
+						} else {
+							break;
+						}
+					}
+				}
 
-    @Override
-    public List<BearingPhraseExt> getTreeSentenceWithoutAmbiguity(String text) {
-        List<BearingPhraseSP> bearingPhraseSP = getTreeSentence(text);
-       return bearingPhraseSP.stream().map(BearingPhraseSP::toExt).collect(Collectors.toList());
-    }
+				//todo возможно другое направление, противоречие в тексте и блок-схеме
+				for (int j = Math.min(lastIndex, rightNeighbor); j < Math.min(lastIndex, rightNeighbor + distance); j++) {
+					Word right = words.get(j);
+					if (!word.haveRelationship(right)) {
+						if (!right.haveContainsBearingForm()) {
+							word.addDependent(right);
+							right.addMain(word);
+						} else {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private void applyCompatibilityForBearingForm(BearingPhrase bearingPhrase) {
+		bearingPhrase.applyConsumer(words -> {
+			for (int i = 0; i < words.size(); i++) {
+				Word word = words.get(i);
+				if (!word.haveMain() && word.haveContainsBearingForm()) {
+					for (int j = i + 1; j < words.size(); j++) {
+						Word right = words.get(j);
+						if (!right.haveMain() && right.haveContainsBearingForm()) {
+							if (!rules.establishRelation(word, right)) {
+								rules.establishRelation(right, word);
+							}
+						}
+					}
+				}
+			}
+		});
+	}
+
+	private void searchMainForm(BearingPhrase bearingPhrase) {
+		Word main = bearingPhrase.applyFunction(this::searchMainForm);
+		bearingPhrase.setMainWord(main);
+	}
+
+	private Word searchMainForm(List<Word> words) {
+		List<Word> lonely = words.stream()
+			.filter(word -> !word.haveMain() && word.haveContainsBearingForm())
+			.collect(Collectors.toList());
+		if (lonely.size() == 0) {
+			log.info("Не удалось найти подходящие слово в роли главного опорного слова");
+			return words.stream()
+				.filter(Word::haveContainsBearingForm)
+				.findFirst().orElse(words.get(words.size() - 1));
+		} else if (lonely.size() == 1) {
+			return lonely.get(0);
+		} else {
+			return lonely.stream()
+				.filter(word -> word.getForms().stream().anyMatch(form -> ShortBearingForm.contains(form.getTypeOfSpeech())))
+				.findFirst().orElse(words.get(words.size() - 1));
+		}
+	}
 }

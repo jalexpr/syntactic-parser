@@ -11,7 +11,10 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
 import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
+import ru.textanalysis.tawt.sp.rules.controlmodel.HomonymyResolver;
+import ru.textanalysis.tawt.sp.rules.controlmodel.utils.HomonymyCalculator;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +42,12 @@ public class SyntaxParser implements ISyntaxParser {
 		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
 		sentence.applyForEachBearingPhrases(this::searchMainForm);
 		applyCompatibilityForSentence(sentence);
+		System.out.println("Предложение: " + text);
+		BigDecimal percentageBefore = HomonymyCalculator.getHomonymyPercentageFromSentence(sentence);
+		System.out.println("Процент до снятия омонимии: " + percentageBefore.toString());
+		removingHomonymyForSentence(sentence);
+		BigDecimal percentageAfter = HomonymyCalculator.getHomonymyPercentageFromSentence(sentence);
+		System.out.println("Процент после снятия омонимии: " + percentageAfter.toString());
 		return sentence;
 	}
 
@@ -51,6 +60,11 @@ public class SyntaxParser implements ISyntaxParser {
 			.filter(word -> !word.haveMain())
 			.collect(Collectors.toList());
 		sentence.setMainWord(mains);
+	}
+
+	private void removingHomonymyForSentence(Sentence sentence) {
+		HomonymyResolver homonymyResolver = new HomonymyResolver();
+		homonymyResolver.resolveHomonymyForSentence(sentence);
 	}
 
 	private void applyCompatibility(BearingPhrase bearingPhrase) {

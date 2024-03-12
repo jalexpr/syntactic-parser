@@ -14,8 +14,8 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
 import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
-import ru.textanalysis.tawt.sp.rules.homonymy.cm.service.CaseHomonymyResolverService;
-import ru.textanalysis.tawt.sp.rules.homonymy.cm.utils.TestUtils;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.service.CaseHomonymyResolverService;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.TestUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,11 +43,27 @@ public class SyntaxParser implements ISyntaxParser {
 		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
 		sentence.applyForEachBearingPhrases(this::searchMainForm);
 		applyCompatibilityForSentence(sentence);
-		log.info("Предложение: " + text);
-		BigDecimal percentageBefore = TestUtils.Calculator.getHomonymyPercentageFromSentence(sentence);
+		BigDecimal percentageBefore = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.TOTAL_PERCENTAGE
+				);
+		BigDecimal percentageBeforeCase = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.CASE_PERCENTAGE
+				);
 		processResolvingCaseHomonymyForSentence(sentence);
-		BigDecimal percentageAfter = TestUtils.Calculator.getHomonymyPercentageFromSentence(sentence);
-		log.info("РЕЗУЛЬТАТ: Процент до: {" + percentageBefore + "}. Процент после: {" + percentageAfter + "}.");
+		BigDecimal percentageAfter = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.TOTAL_PERCENTAGE
+				);
+		BigDecimal percentageAfterCase = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.CASE_PERCENTAGE
+				);
+		log.info("--------------------------------------------------------------------------------");
+		log.info("РЕЗУЛЬТАТ полный: Процент до: {" + percentageBefore + "}. Процент после: {" + percentageAfter + "}.");
+		log.info("РЕЗУЛЬТАТ падежный: Процент до: {" + percentageBeforeCase + "}. Процент после: {" + percentageAfterCase + "}.");
+		log.info("--------------------------------------------------------------------------------");
 		return sentence;
 	}
 
@@ -145,7 +161,7 @@ public class SyntaxParser implements ISyntaxParser {
 			.filter(word -> !word.haveMain() && word.haveContainsBearingForm())
 			.collect(Collectors.toList());
 		if (lonely.size() == 0) {
-			log.info("Не удалось найти подходящие слово в роли главного опорного слова");
+//			log.info("Не удалось найти подходящие слово в роли главного опорного слова");
 			return words.stream()
 				.filter(Word::haveContainsBearingForm)
 				.findFirst().orElse(words.get(words.size() - 1));

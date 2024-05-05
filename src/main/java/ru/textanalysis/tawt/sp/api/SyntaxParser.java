@@ -1,9 +1,6 @@
 package ru.textanalysis.tawt.sp.api;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
 import ru.textanalysis.tawt.awf.AmbiguityWordsFilter;
 import ru.textanalysis.tawt.awf.AmbiguityWordsFilterImpl;
 import ru.textanalysis.tawt.gama.GamaImpl;
@@ -14,10 +11,11 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
 import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
-import ru.textanalysis.tawt.sp.rules.homonymy.cm.service.CaseHomonymyResolverService;
-import ru.textanalysis.tawt.sp.rules.homonymy.cm.utils.TestUtils;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.service.CaseHomonymyResolverService;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.TestUtils;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SyntaxParser implements ISyntaxParser {
@@ -43,11 +41,27 @@ public class SyntaxParser implements ISyntaxParser {
 		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
 		sentence.applyForEachBearingPhrases(this::searchMainForm);
 		applyCompatibilityForSentence(sentence);
-		log.info("Предложение: " + text);
-		BigDecimal percentageBefore = TestUtils.Calculator.getHomonymyPercentageFromSentence(sentence);
+		BigDecimal percentageBefore = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.TOTAL_PERCENTAGE
+				);
+		BigDecimal percentageBeforeCase = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.CASE_PERCENTAGE
+				);
 		processResolvingCaseHomonymyForSentence(sentence);
-		BigDecimal percentageAfter = TestUtils.Calculator.getHomonymyPercentageFromSentence(sentence);
-		log.info("РЕЗУЛЬТАТ: Процент до: {" + percentageBefore + "}. Процент после: {" + percentageAfter + "}.");
+		BigDecimal percentageAfter = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.TOTAL_PERCENTAGE
+				);
+		BigDecimal percentageAfterCase = TestUtils.Calculator
+				.getHomonymyPercentageFromSentence(sentence).get(
+						TestUtils.Calculator.CASE_PERCENTAGE
+				);
+		log.info("--------------------------------------------------------------------------------");
+		log.info("РЕЗУЛЬТАТ полный: Процент до: {" + percentageBefore + "}. Процент после: {" + percentageAfter + "}.");
+		log.info("РЕЗУЛЬТАТ падежный: Процент до: {" + percentageBeforeCase + "}. Процент после: {" + percentageAfterCase + "}.");
+		log.info("--------------------------------------------------------------------------------");
 		return sentence;
 	}
 

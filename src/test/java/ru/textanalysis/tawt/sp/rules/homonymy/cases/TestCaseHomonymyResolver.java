@@ -1,15 +1,26 @@
 package ru.textanalysis.tawt.sp.rules.homonymy.cases;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.sp.api.SyntaxParser;
-import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.TestUtils;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.Utils;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TestCaseHomonymyResolver {
 
-    private static SyntaxParser sp = new SyntaxParser();
+    private static final SyntaxParser sp = new SyntaxParser();
+    private static final boolean LOGGER_ENABLED = true;
+    private static final String PATH_TO_TEXT_FROM_RESOURCES =
+            "books/Frolov_I__Vvedenie_v_filosofiu_www.Litmir.net_75763.txt";
 
     @BeforeAll
     public static void init() {
@@ -18,24 +29,33 @@ public class TestCaseHomonymyResolver {
 
     @Test
     public void testAllTexts() {
-//        Sentence book1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/book1.txt"));
-//        Sentence text1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/text1.txt"));
-//        Sentence text2 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/text2.txt"));
-//        Sentence text3 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/news_09_03.txt"));
-//        Sentence text4 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/kd/part1.txt"));
+        if (!LOGGER_ENABLED) {
+            ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).setLevel(Level.OFF);
+        }
 
-        Sentence book1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/dead_souls.txt"));
-        Sentence book2 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/princess_mary.txt"));
-        Sentence book3 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/dog_heart.txt"));
-        Sentence book4 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/man_into.txt"));
-        Sentence news1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/news1.txt"));
-        Sentence skazka1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/car_cyltan.txt"));
-        Sentence skazka2 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("books/neznakomka.txt"));
+        long startTime = System.currentTimeMillis();
 
-        // Сравнительный анализ
-        Sentence comparing1 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/visual_verbs_1.txt"));
-        Sentence comparing2 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/derived_nouns_from_verbs.txt"));
-        Sentence comparing3 = sp.getTreeSentence(TestUtils.FileReader.readLargeFileAsString("texts/fear_verbs.txt"));
-        Sentence comparing4 = sp.getTreeSentence("Проплыв сто метров от берега можно увидеть плавание дельфинов.");
+        try {
+            Sentence sentence = sp.getTreeSentence(Utils.FileReader.readLargeFileAsString(PATH_TO_TEXT_FROM_RESOURCES));
+            BigDecimal percentageFull = Utils.Calculator
+                    .getHomonymyPercentageFromSentence(sentence).get(
+                            Utils.Calculator.TOTAL_PERCENTAGE
+                    );
+            BigDecimal percentageCase = Utils.Calculator
+                    .getHomonymyPercentageFromSentence(sentence).get(
+                            Utils.Calculator.CASE_PERCENTAGE
+                    );
+            log.info("--------------------------------------------------------------------------------");
+            log.info("РЕЗУЛЬТАТ полный: Процент после: {" + percentageFull + "}.");
+            log.info("РЕЗУЛЬТАТ падежный: Процент после: {" + percentageCase + "}.");
+            log.info("--------------------------------------------------------------------------------");
+            System.out.println("Full percentage: " + percentageFull);
+            System.out.println("Case percentage: " + percentageCase);
+        } finally {
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            log.info("Execution time of testAllTexts: " + duration + " ms");
+            System.out.println("Execution time: " + duration);
+        }
     }
 }

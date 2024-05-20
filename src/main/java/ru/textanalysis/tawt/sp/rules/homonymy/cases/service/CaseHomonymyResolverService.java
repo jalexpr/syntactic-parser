@@ -2,7 +2,6 @@ package ru.textanalysis.tawt.sp.rules.homonymy.cases.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
 import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
@@ -11,7 +10,7 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.sp.rules.homonymy.cases.rules.Rule;
 import ru.textanalysis.tawt.sp.rules.homonymy.cases.rules.RulesForCaseHomonymy;
-import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.TestUtils;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.Utils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,84 +24,12 @@ public class CaseHomonymyResolverService {
         RulesForCaseHomonymy rules = new RulesForCaseHomonymy();
 
         for (BearingPhrase bearingPhrase : sentence.getBearingPhrases()) {
-            processResearching(rules.getPretextRules(), bearingPhrase.getWords()); // Модель управления для предлогов
-
-            processResearching(rules.getRules(), bearingPhrase.getWords()); // Модель управления
-//            processCommonAlgorithm(bearingPhrase); // Общее правило для группы подлежащего и второстепенных членов
+            processResearching(rules.getPretextRules(), bearingPhrase.getWords());
+            processResearching(rules.getRules(), bearingPhrase.getWords());
         }
 
         log.info("Решенных слов: {}", countOfResolvedWords);
         log.info("Слов, которым решение не потребовалось: {}", countOfUnmodifiedWords);
-    }
-
-    private void processCommonAlgorithm(BearingPhrase bearingPhrase) {
-        if ( // Если есть группа подлежащего TODO, сейчас просто проверка главного слова
-                isExactlyPoS(bearingPhrase.getMainWord(), MorfologyParameters.TypeOfSpeech.NOUN)
-                &&
-                isInitialFormExist(bearingPhrase.getMainWord())
-        ) {
-            keepOnlyInitialWordForm(List.of(bearingPhrase.getMainWord()));
-            keepOnlyDerivativesWordForms(bearingPhrase, List.of(bearingPhrase.getMainWord()));
-        }
-    }
-
-    /**
-     * У данной словоформы существует начальная форма слова.
-     * @param word Объект слова.
-     * @return Есть начальная форма.
-     */
-    private boolean isInitialFormExist(Word word) {
-        return word.getForms().stream()
-                .anyMatch(Form::isInitialForm);
-    }
-
-    /**
-     * Данная словоформа однозначно существительное.
-     * @param word Объект слова.
-     * @return Точно существительное.
-     */
-    private boolean isExactlyPoS(Word word, byte PoS) {
-        if (word.isOnlyOneTypeOfSpeech()) {
-            return word.getForms().get(0).getTypeOfSpeech() == PoS;
-        }
-        return false;
-    }
-
-    /**
-     * Убрать у всех слов существительных опорного оборота, кроме excludedWords, начальные формы.
-     * @param bearingPhrase Опорный оборот.
-     * @param excludedWords Слова исключения (подразумевается группа подлежащего).
-     */
-    private void keepOnlyDerivativesWordForms(BearingPhrase bearingPhrase, List<Word> excludedWords) {
-        bearingPhrase.getWords().stream()
-                .filter(word -> word.getForms().get(0).getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN)
-                .filter(word -> !word.isOnlyOneForm())
-                .filter(word -> !excludedWords.contains(word))
-                .forEach(word -> {
-                    List<Form> derivativeForms = word.getForms().stream()
-                            .filter(form -> !form.isInitialForm())
-                            .collect(Collectors.toList());
-                    if (!derivativeForms.isEmpty()) {
-                        countOfResolvedWords++;
-                        word.setForms(derivativeForms);
-                    }
-                });
-    }
-
-    /**
-     * Оставить только начальные формы слов из группы подлежащего.
-     * @param subjectGroup Слова из группы подлежащего.
-     */
-    private void keepOnlyInitialWordForm(List<Word> subjectGroup) {
-        for (Word word : subjectGroup) {
-            List<Form> initialForms = word.getForms().stream()
-                    .filter(Form::isInitialForm)
-                    .collect(Collectors.toList());
-            if (!initialForms.isEmpty()) {
-                countOfResolvedWords++;
-                word.setForms(initialForms);
-            }
-        }
     }
 
     private void processResearching(List<Rule> rules, List<Word> words) {
@@ -123,6 +50,7 @@ public class CaseHomonymyResolverService {
                     if (word.getForms().get(0).getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN) {
                         resolveHomonymy(word, rule, controlWordForLogging);
                         isControlWordFound = false;
+                        continue;
                     }
                 }
                 // Если в списке слов из правила есть текущее слово из предложения
@@ -147,8 +75,8 @@ public class CaseHomonymyResolverService {
         }
 
         if (!correctForms.isEmpty() && word.getForms().size() != correctForms.size()) {
-            TestUtils.StaticLogger.logApplyingRule(word, rule, controlWord);
-            TestUtils.StaticLogger.logWordFormsDiff(word, correctForms);
+            Utils.StaticLogger.logApplyingRule(word, rule, controlWord);
+            Utils.StaticLogger.logWordFormsDiff(word, correctForms);
             word.setForms(correctForms);
             countOfResolvedWords++;
         } else {

@@ -11,22 +11,34 @@ import ru.textanalysis.tawt.sp.rules.homonymy.cases.keywords.WordsLoader;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Инициализатор правил снятия падежной неоднозначности.
+ */
 @Slf4j
 @Getter
 public class RulesForCaseHomonymy {
 
+    /**
+     * Правила предложно-падежных конструкций.
+     */
     private final List<Rule> pretextRules = new LinkedList<>();
+    /**
+     * Правила глагольного управления.
+     */
     private final List<Rule> rules = new LinkedList<>();
+    /**
+     * Загрузчик слов.
+     */
     private final WordsLoader wordsLoader;
 
     public RulesForCaseHomonymy() {
-        this.wordsLoader = new WordsLoader();
+        this.wordsLoader = new WordsLoader(); // загрузка слов
 
         // Pretext rules
-        addRulesForPretext(pretextRules);
+        addRulesForPretext(pretextRules); // инициализация правил предложно-падежных конструкций
 
         // Verb rules
-        addRulesForVerb(rules);
+        addRulesForVerb(rules); // инициализация правил глагольного управления
     }
 
     private void addRulesForVerb(List<Rule> rules) {

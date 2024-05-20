@@ -12,7 +12,6 @@ import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
 import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
 import ru.textanalysis.tawt.sp.rules.homonymy.cases.service.CaseHomonymyResolverService;
-import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.TestUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,32 +35,14 @@ public class SyntaxParser implements ISyntaxParser {
 	@Override
 	public Sentence getTreeSentence(String text) {
 		Sentence sentence = convector.convert(gama.getMorphSentence(text));
+
+		processResolvingCaseHomonymyForSentence(sentence);
 		sentence.applyForEachBearingPhrases(awf::applyAwfForBearingPhrase);
 		sentence.applyForEachBearingPhrases(this::applyCompatibility);
 		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
 		sentence.applyForEachBearingPhrases(this::searchMainForm);
 		applyCompatibilityForSentence(sentence);
-		BigDecimal percentageBefore = TestUtils.Calculator
-				.getHomonymyPercentageFromSentence(sentence).get(
-						TestUtils.Calculator.TOTAL_PERCENTAGE
-				);
-		BigDecimal percentageBeforeCase = TestUtils.Calculator
-				.getHomonymyPercentageFromSentence(sentence).get(
-						TestUtils.Calculator.CASE_PERCENTAGE
-				);
-		processResolvingCaseHomonymyForSentence(sentence);
-		BigDecimal percentageAfter = TestUtils.Calculator
-				.getHomonymyPercentageFromSentence(sentence).get(
-						TestUtils.Calculator.TOTAL_PERCENTAGE
-				);
-		BigDecimal percentageAfterCase = TestUtils.Calculator
-				.getHomonymyPercentageFromSentence(sentence).get(
-						TestUtils.Calculator.CASE_PERCENTAGE
-				);
-		log.info("--------------------------------------------------------------------------------");
-		log.info("РЕЗУЛЬТАТ полный: Процент до: {" + percentageBefore + "}. Процент после: {" + percentageAfter + "}.");
-		log.info("РЕЗУЛЬТАТ падежный: Процент до: {" + percentageBeforeCase + "}. Процент после: {" + percentageAfterCase + "}.");
-		log.info("--------------------------------------------------------------------------------");
+
 		return sentence;
 	}
 

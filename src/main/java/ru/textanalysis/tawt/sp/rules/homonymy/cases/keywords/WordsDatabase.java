@@ -1,5 +1,8 @@
 package ru.textanalysis.tawt.sp.rules.homonymy.cases.keywords;
 
+/**
+ * Пути к файлам(словарям) управляющих(главных) слов.
+ */
 public enum WordsDatabase {
     // Слова предлоги.
     PRETEXT_DAT_CASE("rules/pretext/dat_case.txt"),

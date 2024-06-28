@@ -10,15 +10,8 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.sp.rules.homonymy.cases.rules.Rule;
 import ru.textanalysis.tawt.sp.rules.homonymy.cases.rules.RulesForCaseHomonymy;
-import ru.textanalysis.tawt.sp.rules.homonymy.cases.utils.Utils;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class CaseHomonymyResolverService {
-
-    private int countOfResolvedWords = 0;
-    private int countOfUnmodifiedWords = 0;
 
     public void resolveForSentence(Sentence sentence) {
         RulesForCaseHomonymy rules = new RulesForCaseHomonymy();
@@ -27,44 +20,48 @@ public class CaseHomonymyResolverService {
             processResearching(rules.getPretextRules(), bearingPhrase.getWords());
             processResearching(rules.getRules(), bearingPhrase.getWords());
         }
-
-        log.info("Решенных слов: {}", countOfResolvedWords);
-        log.info("Слов, которым решение не потребовалось: {}", countOfUnmodifiedWords);
     }
 
     private void processResearching(List<Rule> rules, List<Word> words) {
-        for (Rule rule : rules) {
-            boolean isControlWordFound = false; // управляющее слово найдено
-            Word controlWordForLogging = null; // управляющее слово для логирования
-            for (Word word : words) {
-                // Если найдено управляющее слово
-                if (isControlWordFound) {
-                    // Если после управляющего слова встречается предлог перед существительным, то
-                    // сбрасываем флаг, что управляющее слово найдено и переходим к следующему слову опорного оборота
-                    if (word.getForms().get(0).getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.PRETEXT) {
-                        isControlWordFound = false;
-                        continue;
-                    }
-                    // Если после управляющего слова встречаем существительное, то вызываем алгоритм
-                    // снятия омонимии для данного зависимого слова и соответствующего правила
-                    if (word.getForms().get(0).getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN) {
-                        resolveHomonymy(word, rule, controlWordForLogging);
-                        isControlWordFound = false;
-                        continue;
-                    }
+        Word controlWord = null;
+        Rule currentUsingRule = null;
+        for (Word word : words) {
+            byte wordTypeOfSpeech = word.getForms().get(0).getTypeOfSpeech();
+
+            if (controlWord != null) {
+                // Если после управляющего слова встречается предлог перед существительным, то
+                // сбрасываем флаг, что управляющее слово найдено и переходим к следующему слову опорного оборота
+                if (wordTypeOfSpeech == MorfologyParameters.TypeOfSpeech.PRETEXT
+                || wordTypeOfSpeech == MorfologyParameters.TypeOfSpeech.VERB) {
+                    controlWord = null;
+                    currentUsingRule = null;
                 }
-                // Если в списке слов из правила есть текущее слово из предложения
-                if (rule.initialFormKeyIds().contains(word.getForms().get(0).getInitialFormKey())) {
-                    isControlWordFound = true; // управляющее слово найдено
-                    controlWordForLogging = word;
+
+                // Если после управляющего слова встречаем существительное, то вызываем алгоритм
+                // снятия омонимии для данного зависимого слова и соответствующего правила
+                if (wordTypeOfSpeech == MorfologyParameters.TypeOfSpeech.NOUN) {
+                    resolveHomonymy(word, currentUsingRule);
+                    controlWord = null;
+                    currentUsingRule = null;
+                }
+            }
+
+            if (controlWord == null) {
+                for (Rule rule : rules) {
+                    // Если в списке слов из правила есть текущее слово из предложения
+                    if (rule.initialFormKeyIds().contains(word.getForms().get(0).getInitialFormKey())) {
+                        controlWord = word; // управляющее слово найдено
+                        currentUsingRule = rule;
+                        break;
+                    }
                 }
             }
         }
     }
 
-    private void resolveHomonymy(Word word, Rule rule, Word controlWord) {
+    private void resolveHomonymy(Word dependentWord, Rule rule) {
         List<Form> correctForms = new ArrayList<>();
-        for (Form form : word.getForms()) {
+        for (Form form : dependentWord.getForms()) {
             if (
                     rule.possibleCases().contains(
                             form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER)
@@ -74,13 +71,8 @@ public class CaseHomonymyResolverService {
             }
         }
 
-        if (!correctForms.isEmpty() && word.getForms().size() != correctForms.size()) {
-            Utils.StaticLogger.logApplyingRule(word, rule, controlWord);
-            Utils.StaticLogger.logWordFormsDiff(word, correctForms);
-            word.setForms(correctForms);
-            countOfResolvedWords++;
-        } else {
-            countOfUnmodifiedWords++;
+        if (!correctForms.isEmpty() && dependentWord.getForms().size() != correctForms.size()) {
+            dependentWord.setForms(correctForms);
         }
     }
 }

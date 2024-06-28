@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TestCaseHomonymyResolver {
 
     private static final SyntaxParser sp = new SyntaxParser();
-    private static final boolean LOGGER_ENABLED = true;
+    private static final boolean LOGGER_ENABLED = false;
     private static final String PATH_TO_TEXT_FROM_RESOURCES =
             "books/Frolov_I__Vvedenie_v_filosofiu_www.Litmir.net_75763.txt";
 

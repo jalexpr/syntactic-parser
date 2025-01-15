@@ -11,6 +11,8 @@ import ru.textanalysis.tawt.ms.model.sp.Sentence;
 import ru.textanalysis.tawt.ms.model.sp.Word;
 import ru.textanalysis.tawt.rfc.RulesForCompatibility;
 import ru.textanalysis.tawt.rfc.RulesForCompatibilityImpl;
+import ru.textanalysis.tawt.sp.rules.homonymy.HomonymyConfiguration;
+import ru.textanalysis.tawt.sp.rules.homonymy.cases.service.CaseHomonymyResolverService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ public class SyntaxParser implements ISyntaxParser {
 	private final AmbiguityWordsFilter awf = new AmbiguityWordsFilterImpl();
 	private final RulesForCompatibility rules = new RulesForCompatibilityImpl();
 	private final GamaToSpConvector convector = new GamaToSpConvector();
+	private final HomonymyConfiguration homonymyConfiguration = new HomonymyConfiguration();
 
 	@Override
 	public void init() {
@@ -34,11 +37,16 @@ public class SyntaxParser implements ISyntaxParser {
 	@Override
 	public Sentence getTreeSentence(String text) {
 		Sentence sentence = convector.convert(gama.getMorphSentence(text));
+
+		if (homonymyConfiguration.getIsCaseHomonymyResolverEnabled()) {
+			processResolvingCaseHomonymyForSentence(sentence);
+		}
 		sentence.applyForEachBearingPhrases(awf::applyAwfForBearingPhrase);
 		sentence.applyForEachBearingPhrases(this::applyCompatibility);
 		sentence.applyForEachBearingPhrases(this::applyCompatibilityForBearingForm);
 		sentence.applyForEachBearingPhrases(this::searchMainForm);
 		applyCompatibilityForSentence(sentence);
+
 		return sentence;
 	}
 
@@ -51,6 +59,11 @@ public class SyntaxParser implements ISyntaxParser {
 			.filter(word -> !word.haveMain())
 			.collect(Collectors.toList());
 		sentence.setMainWord(mains);
+	}
+
+	private void processResolvingCaseHomonymyForSentence(Sentence sentence) {
+		CaseHomonymyResolverService service = new CaseHomonymyResolverService();
+		service.resolveForSentence(sentence);
 	}
 
 	private void applyCompatibility(BearingPhrase bearingPhrase) {

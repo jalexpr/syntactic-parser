@@ -144,7 +144,6 @@ public class SyntaxParser implements ISyntaxParser {
 			.filter(word -> !word.haveMain() && word.haveContainsBearingForm())
 			.toList();
 		if (lonely.isEmpty()) {
-			log.trace("Не удалось найти подходящие слово в роли главного опорного слова");
 			return words.stream()
 				.filter(Word::haveContainsBearingForm)
 				.findFirst().orElse(words.get(words.size() - 1));
